@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#10101a">
+<title>Sidance 2.5 — Motion Control</title>
+<style>
+:root{color-scheme:dark;--bg:#0d0d16;--panel:#171725;--line:#303047;--muted:#a7a7bd;--text:#f7f7ff;--accent:#a78bfa;--accent2:#6ee7d8}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#211b3d 0%,var(--bg) 55%);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--text);min-height:100vh}
+main{width:min(920px,100%);margin:auto;padding:24px 16px 48px}.brand{display:flex;align-items:center;gap:12px;margin-bottom:22px}.logo{width:48px;height:48px;border-radius:15px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;color:#111;font-weight:900;font-size:20px}.brand h1{font-size:clamp(22px,4vw,32px);margin:0}.brand p{margin:3px 0 0;color:var(--muted);font-size:13px}
+.hero{padding:22px;border:1px solid var(--line);border-radius:22px;background:#151522dd;margin-bottom:18px}.hero h2{margin:0 0 8px;font-size:21px}.hero p{color:var(--muted);margin:0;line-height:1.55}
+.uploads{display:grid;grid-template-columns:1fr 1fr;gap:14px}.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;min-width:0}.card h3{margin:0 0 6px;font-size:16px}.sub{color:var(--muted);font-size:13px;line-height:1.45;margin:0 0 13px}
+.drop{display:flex;min-height:190px;border:1.5px dashed #55516f;border-radius:14px;align-items:center;justify-content:center;text-align:center;padding:14px;cursor:pointer;background:#10101a;overflow:hidden}.drop:hover{border-color:var(--accent)}.drop input{display:none}.drop-inner{display:grid;gap:8px;justify-items:center;color:var(--muted);font-size:13px}.drop-inner strong{color:var(--text);font-size:14px}.drop svg{width:35px;height:35px;color:var(--accent)}.preview{width:100%;max-height:250px;object-fit:contain;border-radius:10px}.hidden{display:none!important}
+.settings{margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:14px}.field{display:grid;gap:7px}.field label{font-size:13px;color:var(--muted)}select,input[type=text]{width:100%;padding:12px;border-radius:11px;background:#10101a;color:var(--text);border:1px solid var(--line);font:inherit}
+.checkrow{display:flex;gap:9px;align-items:center;color:var(--muted);font-size:13px;margin-top:14px}.checkrow input{accent-color:var(--accent)}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.btn{border:0;border-radius:12px;padding:13px 17px;font:700 14px system-ui;cursor:pointer}.primary{background:linear-gradient(100deg,var(--accent),var(--accent2));color:#10101a;flex:1;min-width:190px}.secondary{background:#29283b;color:var(--text);border:1px solid var(--line)}.btn:disabled{opacity:.4;cursor:not-allowed}
+.notice{border:1px solid #64512a;background:#282114;color:#f5d99b;border-radius:13px;padding:13px 14px;font-size:13px;line-height:1.5;margin-top:16px}.result{margin-top:18px}.result h3{margin:0 0 8px}.result p{color:var(--muted);font-size:13px;line-height:1.5}.result textarea{width:100%;min-height:250px;resize:vertical;background:#0b0b13;color:#e8e6f5;border:1px solid var(--line);border-radius:13px;padding:14px;font:13px/1.6 ui-monospace,SFMono-Regular,monospace}.footer{margin-top:20px;color:#85859e;font-size:12px;line-height:1.6;text-align:center}
+@media(max-width:620px){main{padding:18px 12px 32px}.uploads{grid-template-columns:1fr}.drop{min-height:150px}.settings{grid-template-columns:1fr}.hero{padding:18px}.card{padding:13px}}
+</style>
+</head>
+<body>
+<main>
+  <header class="brand">
+    <div class="logo">S2</div>
+    <div><h1>Sidance 2.5</h1><p>Motion Control Studio · Web App</p></div>
+  </header>
+  <section class="hero">
+    <h2>Gerakkan karakter dari video referensi</h2>
+    <p>Masukkan satu video gerakan dan satu foto karakter. Aplikasi ini menyiapkan prompt motion-control yang bisa disalin ke generator video AI pilihanmu.</p>
+  </section>
+
+  <section class="uploads">
+    <article class="card">
+      <h3>1. Video referensi gerakan</h3>
+      <p class="sub">Pilih video tarian/gerakan yang ingin ditiru. Gunakan video yang kamu punya izin untuk pakai.</p>
+      <label class="drop" for="videoFile">
+        <input id="videoFile" type="file" accept="video/*">
+        <div id="videoEmpty" class="drop-inner">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 9 5 3-5 3z"/></svg>
+          <strong>Ketuk untuk pilih video</strong><span>MP4, MOV, WebM · maksimal 30 detik disarankan</span>
+        </div>
+        <video id="videoPreview" class="preview hidden" controls playsinline></video>
+      </label>
+      <p id="videoInfo" class="sub" aria-live="polite" style="margin:10px 0 0">Belum ada video dipilih.</p>
+    </article>
+
+    <article class="card">
+      <h3>2. Foto/gambar karakter</h3>
+      <p class="sub">Pilih gambar karakter yang akan mengikuti gerakan dari video referensi.</p>
+      <label class="drop" for="imageFile">
+        <input id="imageFile" type="file" accept="image/*">
+        <div id="imageEmpty" class="drop-inner">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+          <strong>Ketuk untuk pilih gambar</strong><span>JPG, PNG, WebP</span>
+        </div>
+        <img id="imagePreview" class="preview hidden" alt="Pratinjau karakter yang dipilih">
+      </label>
+      <p id="imageInfo" class="sub" aria-live="polite" style="margin:10px 0 0">Belum ada gambar dipilih.</p>
+    </article>
+  </section>
+
+  <section class="card" style="margin-top:14px">
+    <h3>Pengaturan video</h3>
+    <p class="sub">Pengaturan ini dimasukkan ke prompt. Generator AI eksternal mungkin punya batas yang berbeda.</p>
+    <div class="settings">
+      <div class="field"><label for="duration">Durasi target</label><select id="duration"><option value="5">5 detik</option><option value="10" selected>10 detik</option><option value="15">15 detik</option><option value="20">20 detik</option><option value="30">30 detik</option></select></div>
+      <div class="field"><label for="ratio">Rasio video</label><select id="ratio"><option value="9:16" selected>9:16 · Reels/Shorts/TikTok</option><option value="16:9">16:9 · YouTube</option><option value="1:1">1:1 · Persegi</option><option value="4:5">4:5 · Feed</option></select></div>
+    </div>
+    <label class="checkrow"><input type="checkbox" id="animationMode" checked> Pertahankan gaya animasi/karakter asli dan ekspresi yang jelas</label>
+    <div class="actions">
+      <button class="btn primary" id="generateBtn" disabled>Generate Video · Siapkan Prompt</button>
+      <button class="btn secondary" id="resetBtn" type="button">Reset</button>
+    </div>
+    <div class="notice"><strong>Catatan penting:</strong> Generator video belum terhubung di versi ini. Tombol Generate Video akan memvalidasi file dan menyiapkan prompt, bukan merender video jadi. Untuk menghasilkan video otomatis, perlu menghubungkan layanan/model video AI dan API yang mendukung motion control.</div>
+  </section>
+
+  <section class="card result hidden" id="result">
+    <h3>Prompt motion control siap digunakan</h3>
+    <p>Salin prompt ini ke layanan video AI yang mendukung input video referensi dan gambar karakter. Unggah kedua file di layanan tersebut juga.</p>
+    <textarea id="promptOutput" readonly></textarea>
+    <div class="actions"><button class="btn primary" id="copyBtn">Salin Prompt</button><button class="btn secondary" id="downloadBtn">Unduh TXT</button></div>
+    <p id="copyStatus" aria-live="polite"></p>
+  </section>
+  <p class="footer">Sidance 2.5 · Web app prototipe · File yang dipilih diproses di browser untuk pratinjau; tidak diunggah ke server oleh halaman ini.</p>
+</main>
+<script>
+const videoInput=document.getElementById('videoFile'), imageInput=document.getElementById('imageFile');
+const videoPreview=document.getElementById('videoPreview'), imagePreview=document.getElementById('imagePreview');
+const videoEmpty=document.getElementById('videoEmpty'), imageEmpty=document.getElementById('imageEmpty');
+const videoInfo=document.getElementById('videoInfo'), imageInfo=document.getElementById('imageInfo');
+const generateBtn=document.getElementById('generateBtn'), result=document.getElementById('result');
+let videoUrl=null,imageUrl=null,videoDuration=null;
+function updateReady(){generateBtn.disabled=!(videoInput.files.length&&imageInput.files.length)}
+videoInput.addEventListener('change',()=>{
+  const f=videoInput.files[0]; if(!f){return}
+  if(videoUrl)URL.revokeObjectURL(videoUrl);videoUrl=URL.createObjectURL(f);videoPreview.src=videoUrl;videoPreview.classList.remove('hidden');videoEmpty.classList.add('hidden');
+  videoInfo.textContent=`${f.name} · ${(f.size/1024/1024).toFixed(1)} MB · Memeriksa durasi…`;
+  videoPreview.onloadedmetadata=()=>{
+    videoDuration=videoPreview.duration;
+    const secs=Number.isFinite(videoDuration)?videoDuration.toFixed(1)+' detik':'durasi tidak terbaca';
+    videoInfo.textContent=`${f.name} · ${(f.size/1024/1024).toFixed(1)} MB · ${secs}`;
+    if(videoDuration>30)videoInfo.textContent+=' · Catatan: klip lebih dari 30 detik; gunakan potongan maksimal 30 detik bila perlu.';
+  };updateReady();
+});
+imageInput.addEventListener('change',()=>{
+  const f=imageInput.files[0];if(!f){return}
+  if(imageUrl)URL.revokeObjectURL(imageUrl);imageUrl=URL.createObjectURL(f);imagePreview.src=imageUrl;imagePreview.classList.remove('hidden');imageEmpty.classList.add('hidden');
+  imageInfo.textContent=`${f.name} · ${(f.size/1024/1024).toFixed(1)} MB`;updateReady();
+});
+generateBtn.addEventListener('click',()=>{
+  if(!videoInput.files.length||!imageInput.files.length)return;
+  const dur=Number(document.getElementById('duration').value);
+  const ratio=document.getElementById('ratio').value;
+  const anim=document.getElementById('animationMode').checked;
+  const animationLine=anim?'Pertahankan gaya visual asli karakter, wajah, proporsi, warna, pakaian, dan detail khas. Jika karakter kartun/hewan, jangan ubah menjadi manusia realistis. Ekspresi wajah harus jelas dan alami.':'Pertahankan identitas visual, bentuk, warna, pakaian, dan detail khas karakter dari gambar sumber.';
+  const prompt=`MOTION CONTROL — SIDANCE 2.5\n\nINPUT:\n- Video referensi gerakan: ${videoInput.files[0].name}\n- Gambar karakter: ${imageInput.files[0].name}\n\nPROMPT:\nGunakan video referensi sebagai sumber gerakan utama dan gambar yang diunggah sebagai identitas visual karakter. Transfer gerakan tubuh, timing, ritme, arah gerak, pose, dan transisi dari video referensi ke karakter pada gambar. ${animationLine} Gerakan harus alami, halus, konsisten, dan mengikuti tempo referensi dari awal hingga akhir. Pertahankan komposisi dan latar sejauh memungkinkan. Kamera stabil tanpa perpindahan sudut mendadak. Durasi target ${dur} detik (jangan melebihi 30 detik), rasio ${ratio}. Hasil akhir tajam, bersih, dan stabil.\n\nNEGATIVE PROMPT:\nperubahan identitas, wajah berubah, karakter tidak konsisten, anggota tubuh tambahan/hilang, tangan rusak, jari menyatu, anatomi bengkok, tubuh terdistorsi, flicker, jitter, frame patah, gerakan melompat, potongan kamera mendadak, pakaian berubah, latar meleleh, karakter duplikat, teks acak, logo, watermark, buram, resolusi rendah, gerakan tidak alami.\n\nCATATAN:\nUnggah kedua file ini pada generator video AI yang mendukung video reference + image/character input. Prompt saja tidak dapat menjalankan render video tanpa model atau layanan video AI yang terhubung.`;
+  document.getElementById('promptOutput').value=prompt;result.classList.remove('hidden');result.scrollIntoView({behavior:'smooth',block:'start'});
+});
+document.getElementById('copyBtn').addEventListener('click',async()=>{
+  const out=document.getElementById('promptOutput');
+  try{await navigator.clipboard.writeText(out.value);document.getElementById('copyStatus').textContent='Prompt berhasil disalin.'}
+  catch(e){out.select();document.execCommand('copy');document.getElementById('copyStatus').textContent='Jika belum tersalin, tekan lama pada teks lalu pilih Salin.'}
+});
+document.getElementById('downloadBtn').addEventListener('click',()=>{
+  const blob=new Blob([document.getElementById('promptOutput').value],{type:'text/plain;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Sidance_2.5_Motion_Control_Prompt.txt';a.click();URL.revokeObjectURL(a.href);
+});
+document.getElementById('resetBtn').addEventListener('click',()=>{
+  videoInput.value='';imageInput.value='';if(videoUrl)URL.revokeObjectURL(videoUrl);if(imageUrl)URL.revokeObjectURL(imageUrl);
+  videoUrl=imageUrl=null;videoDuration=null;videoPreview.removeAttribute('src');videoPreview.load();videoPreview.classList.add('hidden');imagePreview.removeAttribute('src');imagePreview.classList.add('hidden');
+  videoEmpty.classList.remove('hidden');imageEmpty.classList.remove('hidden');videoInfo.textContent='Belum ada video dipilih.';imageInfo.textContent='Belum ada gambar dipilih.';result.classList.add('hidden');updateReady();
+});
+</script>
+</body>
+</html>
